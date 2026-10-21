@@ -1,0 +1,9 @@
+# Serve the CPU smoke-test models (weights/smoke/). Detection quality is NOT meaningful.
+base: configs/server.yaml
+pipeline:
+  model_a:
+    detector: {weights: weights/smoke/model_a_detect.onnx, conf: 0.4}
+    classifier: {weights: weights/smoke/model_a_classify.onnx}
+  model_b:
+    weights: weights/smoke/model_b_tcn.pt
+    embedder: weights/smoke/embedder.onnx

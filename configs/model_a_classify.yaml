@@ -1,0 +1,20 @@
+# Model A / frame classifier: image-level labels from the Trier FFF dataset
+# (extrusion_error, layer_shift, no_error). The dataset has no boxes, so this is a classifier.
+task: classify
+model: weights/yolo11n-cls.pt
+data: data/processed/trier_cls
+output_weights: weights/model_a_classify.pt
+train:
+  epochs: 50
+  imgsz: 224
+  batch: 64
+  patience: 10
+  cos_lr: true
+  fliplr: 0.5
+  hsv_h: 0.01
+  seed: 42
+  deterministic: true
+  project: runs/model_a
+  name: classify
+  exist_ok: true
+  plots: true

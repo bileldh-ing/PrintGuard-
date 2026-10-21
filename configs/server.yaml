@@ -1,0 +1,40 @@
+# PrintGuard server configuration. Override any value with PRINTGUARD_CONFIG=<file>.
+server:
+  host: 0.0.0.0
+  port: 8000
+  database: data/printguard.sqlite3
+  stream_fps: 8                  # max frames/s pushed to the dashboard
+  jpeg_quality: 70
+  max_width: 960                 # frames are downscaled before inference and streaming
+
+source:                          # started automatically if `autostart: true`
+  autostart: false
+  kind: file                     # file | usb | rtsp
+  uri: ""                        # path, camera index ("0") or rtsp:// URL
+  loop: true                     # replay files in a loop (demo mode)
+  target_fps: 4                  # inference rate; frames in between are skipped
+
+pipeline:
+  model_a:
+    detector: {weights: weights/model_a_detect.pt, imgsz: 640, conf: 0.25}
+    classifier: {weights: weights/model_a_classify.pt, imgsz: 224}
+  model_b:
+    weights: weights/model_b_tcn.pt
+    window: 32
+  alerts:
+    threshold: 0.5
+    k: 3
+    n: 5
+    cooldown_frames: 50
+
+printer:
+  # SAFETY: pausing is DISABLED by default. Even when enabled, a pause is only ever sent after
+  # an operator explicitly approves a specific alert in the dashboard (or via the REST API).
+  # PrintGuard never pauses a printer on its own.
+  pause_enabled: false
+  dry_run: true                  # log the request instead of sending it
+  backend: octoprint             # octoprint | moonraker
+  url: http://octopi.local
+  api_key_env: OCTOPRINT_API_KEY # the key is read from this environment variable, never from git
+  min_seconds_between_pauses: 60
+  request_timeout_s: 5

@@ -1,0 +1,80 @@
+# Dataset sources and subset profiles.
+# `smoke` is sized for a CPU sandbox / CI (a few hundred MB); `full` is for a GPU box.
+root: data
+seed: 42
+
+sources:
+  trier_fff:
+    record_id: "18628777"
+    citation: >-
+      Bast, S., Scherer, K., Wahl, M., Naumann, S., Dartmann, G., Didas, S. (2026).
+      Quality Control in Additive Manufacturing: Image Dataset for Defect Detection in
+      Fused Filament Fabrication (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.18628777
+    license: CC-BY-4.0
+    archives:
+      base: base_data.zip
+      test: test_data.zip
+      stringing: additional_defect_data.zip
+    # folder name in the archive -> canonical PrintGuard class
+    class_map:
+      extrusion_error_print: extrusion_error
+      layershift_error_print: layer_shift
+      no_error_print: no_error
+      stringing_error: stringing
+      no_stringing_error: no_error
+  yolo_strings:
+    record_id: "14711320"
+    citation: >-
+      Charia, O., Rajani, H., Domingo-Espin, M., Ferrer Real, I., Gracias, N. (2025).
+      YOLO-Strings: A YOLO-compatible Dataset for Detecting Stringing during 3D Printing.
+      Zenodo. https://doi.org/10.5281/zenodo.14711320
+    license: CC-BY-4.0
+    archive: datasets.zip
+
+profiles:
+  smoke:
+    resize_max_side: 480         # downscale processed images so CPU smoke runs fit in ~1 GB RAM
+    trier:
+      variant: cropped           # cropped | full_res
+      cameras: [camera1, camera2, camera3]
+      classes: [extrusion_error_print, layershift_error_print, no_error_print]
+      # contiguous frame blocks act as pseudo-print groups (the archive has no print IDs)
+      base_blocks: 6
+      test_blocks: 2
+      block_len: 12
+      include_stringing_archive: false
+    yolo_strings:
+      max_groups: 260            # unique source images (augmented copies kept together)
+      sequences:
+        camera: micro
+        # train / val (17,18,20,23) / test (5,9,22,28) sequences, see `split` below
+        with_stringing: [sequence_1, sequence_2, sequence_3, sequence_4, sequence_6, sequence_7, sequence_8, sequence_10,
+                         sequence_17, sequence_18, sequence_20, sequence_5, sequence_9, sequence_22]
+        without_stringing: [sequence_3, sequence_6, sequence_7, sequence_8, sequence_12, sequence_16,
+                            sequence_18, sequence_20, sequence_23, sequence_5, sequence_9, sequence_22, sequence_28]
+        stride: 1
+        max_frames: 0
+  full:
+    trier:
+      variant: cropped
+      cameras: [camera1, camera2, camera3]
+      classes: [extrusion_error_print, layershift_error_print, no_error_print]
+      base_blocks: 0             # 0 = take every frame
+      test_blocks: 0
+      block_len: 50
+      include_stringing_archive: true
+    yolo_strings:
+      max_groups: 0              # 0 = all
+      sequences:
+        camera: micro
+        with_stringing: all
+        without_stringing: all
+        stride: 1
+        max_frames: 0
+
+split:
+  # YOLO-Strings: split by recording sequence number (FLIR + microscope + data/good parts of a
+  # print stay together). Validation = the sequences the authors put in their own `valid` set.
+  yolo_strings_val_sequences: ["17", "18", "20", "23", "25"]
+  yolo_strings_test_sequences: ["5", "9", "22", "28"]
+  val_fraction: 0.2              # of base/train groups; the official test archive stays the test set

@@ -1,0 +1,10 @@
+# CPU smoke test: proves the pipeline runs end to end. Numbers are NOT meaningful.
+train:
+  epochs: 3
+  imgsz: 128
+  batch: 16
+  workers: 0
+  patience: 0
+  plots: false
+  name: classify_smoke
+output_weights: weights/smoke/model_a_classify.pt

@@ -1,0 +1,17 @@
+# CPU smoke profile for Model B (merged on top of model_b_tcn.yaml / model_b_transformer.yaml).
+# Outputs go to weights/smoke/ and results/smoke/. Numbers are NOT meaningful.
+profile: smoke
+data:
+  cache_dir: data/cache/features_smoke
+  max_side: 480
+  frame_stride: 2               # every 2nd frame to keep CPU feature extraction short
+model_a:
+  detector: {weights: weights/smoke/model_a_detect.onnx, imgsz: 256, conf: 0.05}
+  classifier: {weights: weights/smoke/model_a_classify.onnx, imgsz: 128}
+features:
+  embedder: weights/smoke/embedder.onnx
+augmentation:
+  variants_clean: 2
+  variants_stringing_train: 0
+train:
+  epochs: 15

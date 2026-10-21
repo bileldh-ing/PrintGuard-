@@ -1,0 +1,44 @@
+# Model B: causal temporal model over per-frame features.
+seed: 42
+data:
+  index: data/processed/sequences/index.json
+  cache_dir: data/cache/features
+  max_side: 640                 # frames are downscaled before Model A
+model_a:                        # frozen feature providers (weights produced by train_a)
+  # ONNX exports (`make export`) keep feature extraction torch-free; .pt files work as well
+  detector: {weights: weights/model_a_detect.onnx, imgsz: 640, conf: 0.05}
+  classifier: {weights: weights/model_a_classify.onnx, imgsz: 224}
+features:
+  embedder: weights/embedder.onnx   # `make export` creates it; "torch" uses PyTorch directly
+  embed_dim: 128                # MobileNetV3-Small pooled 576-d -> fixed random projection
+  imgsz: 160
+  pretrained: true
+augmentation:                   # synthetic gradual layer shift (printguard/data/augment.py)
+  enabled: true
+  variants_clean: 3
+  variants_stringing_train: 1
+  onset_range: [0.3, 0.6]
+  ramp_range: [8, 25]
+  shift_range: [0.03, 0.08]
+model:
+  type: tcn
+  channels: 64
+  levels: 4
+  kernel_size: 3
+  dropout: 0.1
+train:
+  window: 32
+  stride: 8
+  epochs: 60
+  batch_size: 32
+  lr: 0.002
+  weight_decay: 0.0001
+  output: weights/model_b_tcn.pt
+evaluation:
+  threshold: 0.5
+  persistence_k: 3              # alarm when k of the last n frames exceed the threshold
+  persistence_n: 5
+  # YOLO-Strings captures one frame per printed layer and does not publish layer times.
+  # Per-hour figures therefore use this ASSUMED layer time; per-100-frame figures do not.
+  seconds_per_frame: 30
+  results_dir: results/model_b_tcn

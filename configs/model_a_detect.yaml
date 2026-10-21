@@ -1,0 +1,22 @@
+# Model A / detection head: stringing boxes from YOLO-Strings.
+task: detect
+model: weights/yolo11n.pt            # COCO-pretrained; yolov8n.pt also works
+data: data/processed/yolo_strings/dataset.yaml
+output_weights: weights/model_a_detect.pt
+train:
+  epochs: 100
+  imgsz: 640
+  batch: 16
+  patience: 20
+  optimizer: auto
+  cos_lr: true
+  close_mosaic: 10
+  hsv_h: 0.01                 # filament colour is informative; keep hue jitter small
+  fliplr: 0.5
+  degrees: 0.0
+  seed: 42
+  deterministic: true
+  project: runs/model_a
+  name: detect
+  exist_ok: true
+  plots: true

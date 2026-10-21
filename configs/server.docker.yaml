@@ -1,0 +1,10 @@
+# Server config used inside Docker / on a Raspberry Pi: torch-free ONNX models.
+base: configs/server.yaml
+pipeline:
+  model_a:
+    detector: {weights: weights/model_a_detect.onnx, conf: 0.25}
+    classifier: {weights: weights/model_a_classify.onnx}
+  model_b:
+    # Model B checkpoints are PyTorch; set weights to "" on torch-free devices to use Model A only.
+    weights: ""
+    embedder: weights/embedder.onnx

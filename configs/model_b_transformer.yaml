@@ -1,0 +1,14 @@
+# Model B, Transformer variant. Everything not listed is inherited from model_b_tcn.yaml.
+base: configs/model_b_tcn.yaml
+model:
+  type: transformer
+  d_model: 64
+  heads: 4
+  layers: 2
+  ff_mult: 2
+  dropout: 0.1
+  max_len: 256
+train:
+  output: weights/model_b_transformer.pt
+evaluation:
+  results_dir: results/model_b_transformer
