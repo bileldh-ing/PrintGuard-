@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PrintGuard AI · Live quality inspection</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314b8a6'/><path d='M9 22V10h7a4 4 0 010 8h-7' stroke='white' stroke-width='3' fill='none'/></svg>" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">P</div>
+      <div>
+        <h1>PrintGuard <span>AI</span></h1>
+        <p>Real-time visual quality inspection for FFF 3D printing</p>
+      </div>
+    </div>
+    <div class="top-stats">
+      <div class="stat"><label>Stream</label><span id="conn" class="pill pill-off">offline</span></div>
+      <div class="stat"><label>Inference</label><span id="fps">– fps</span></div>
+      <div class="stat"><label>Latency</label><span id="latency">– ms</span></div>
+      <div class="stat"><label>Frames</label><span id="frames">0</span></div>
+      <div class="stat models" id="models"></div>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card video-card">
+      <div class="card-head">
+        <h2>Live camera</h2>
+        <div id="frame-badges" class="badges"></div>
+      </div>
+      <div class="video-wrap">
+        <canvas id="video" width="960" height="540" aria-label="Live video with detections"></canvas>
+        <div id="video-empty" class="video-empty">
+          <div class="pulse"></div>
+          <p>No source running</p>
+          <small>Start a video file, USB camera or RTSP stream below.</small>
+        </div>
+      </div>
+      <form id="source-form" class="source-form" autocomplete="off">
+        <select id="src-kind" aria-label="Source type">
+          <option value="file">Video file</option>
+          <option value="usb">USB camera</option>
+          <option value="rtsp">RTSP stream</option>
+        </select>
+        <input id="src-uri" placeholder="path/to/print.mp4 · 0 · rtsp://camera/stream" aria-label="Source" required />
+        <input id="src-fps" type="number" min="0.5" max="30" step="0.5" value="4" title="Inference frames per second" aria-label="Target fps" />
+        <button type="submit" class="btn btn-primary">Start</button>
+        <button type="button" id="src-stop" class="btn">Stop</button>
+      </form>
+      <p id="source-msg" class="hint"></p>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <div class="card-head"><h2>Defect risk</h2><small class="muted" id="score-src">waiting…</small></div>
+        <div id="scores" class="scores"></div>
+      </section>
+
+      <section class="card alerts-card">
+        <div class="card-head">
+          <h2>Operator alerts</h2>
+          <span id="alert-count" class="pill pill-off">0 open</span>
+        </div>
+        <div id="safety" class="safety"></div>
+        <label class="operator">Operator
+          <input id="operator" placeholder="your name" maxlength="64" />
+        </label>
+        <ul id="alerts" class="alerts"></ul>
+      </section>
+    </aside>
+
+    <section class="card timeline-card">
+      <div class="card-head">
+        <h2>Issue timeline</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+      <canvas id="chart" height="150" aria-label="Defect scores over time"></canvas>
+      <table class="events">
+        <thead><tr><th>Time</th><th>Frame</th><th>Defect</th><th>Source</th><th>Confidence</th><th>Trend</th></tr></thead>
+        <tbody id="events"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <dialog id="confirm">
+    <form method="dialog">
+      <h3>Request printer pause?</h3>
+      <p id="confirm-text"></p>
+      <p class="warn">This sends a <b>pause</b> command to the printer (or records it in dry-run mode). Resume stays manual at the printer.</p>
+      <menu>
+        <button value="cancel" class="btn">Cancel</button>
+        <button value="ok" class="btn btn-danger">Approve pause</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <footer class="foot">PrintGuard AI · decision support only — the operator stays in control of the printer.</footer>
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>
