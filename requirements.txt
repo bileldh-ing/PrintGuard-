@@ -1,0 +1,9 @@
+# Runtime (server + ONNX inference + data download). For training add requirements-train.txt.
+numpy>=1.24
+opencv-python-headless>=4.8
+pyyaml>=6
+requests>=2.31
+remotezip>=0.12
+onnxruntime>=1.17
+fastapi>=0.110
+uvicorn[standard]>=0.27

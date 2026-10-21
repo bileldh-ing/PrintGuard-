@@ -1,0 +1,29 @@
+# data, weights and run artefacts (re-create with `make data`, `make train-a`, ...)
+data/
+weights/
+runs/
+*.pt
+*.onnx
+*.npz
+*.sqlite3
+*.cache
+results/**/*.png
+!docs/assets/*.png
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+# notebooks / editors / os
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+# secrets
+.env
+*.key

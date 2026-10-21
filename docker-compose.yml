@@ -1,0 +1,17 @@
+services:
+  printguard:
+    build: .
+    image: printguard-ai:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./weights:/app/weights:ro      # trained models (not in git)
+      - ./data:/app/data               # SQLite timeline + replay videos
+    environment:
+      # Optional: protect mutating endpoints. Set in a local .env file, never commit it.
+      - PRINTGUARD_TOKEN=${PRINTGUARD_TOKEN:-}
+      - OCTOPRINT_API_KEY=${OCTOPRINT_API_KEY:-}
+    # USB camera passthrough (Linux):
+    # devices:
+    #   - /dev/video0:/dev/video0
+    restart: unless-stopped

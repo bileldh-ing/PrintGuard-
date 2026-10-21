@@ -1,0 +1,11 @@
+data
+runs
+.git
+.venv
+venv
+**/__pycache__
+.pytest_cache
+.ruff_cache
+notebooks
+results
+*.zip
