@@ -1,0 +1,42 @@
+{
+  "host": {
+    "machine": "aarch64",
+    "cpu": "aarch64",
+    "cores": 2,
+    "python": "3.12.15",
+    "system": "Linux"
+  },
+  "frame": "960x540 synthetic",
+  "components": {
+    "detector (model_a_detect.onnx)": {
+      "median_ms": 26.75,
+      "p90_ms": 28.97,
+      "fps": 37.4,
+      "runs": 20
+    },
+    "classifier (model_a_classify.onnx)": {
+      "median_ms": 3.08,
+      "p90_ms": 6.51,
+      "fps": 324.2,
+      "runs": 20
+    },
+    "embedder (embedder.onnx)": {
+      "median_ms": 7.67,
+      "p90_ms": 8.62,
+      "fps": 130.4,
+      "runs": 20
+    },
+    "temporal (model_b_tcn.pt, window 32)": {
+      "median_ms": 7.08,
+      "p90_ms": 8.2,
+      "fps": 141.3,
+      "runs": 20
+    }
+  },
+  "pipeline_per_frame": {
+    "median_ms": 72.57,
+    "p90_ms": 82.72,
+    "fps": 13.8,
+    "runs": 20
+  }
+}

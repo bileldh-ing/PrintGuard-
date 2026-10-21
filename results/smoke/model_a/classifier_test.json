@@ -1,0 +1,51 @@
+{
+  "accuracy": 0.5324074074074074,
+  "macro_precision": 0.6821505376344086,
+  "macro_recall": 0.5324074074074074,
+  "macro_f1": 0.5172098843927718,
+  "per_class": {
+    "extrusion_error": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "support": 72
+    },
+    "layer_shift": {
+      "precision": 0.64,
+      "recall": 0.2222222222222222,
+      "f1": 0.32989690721649484,
+      "support": 72
+    },
+    "no_error": {
+      "precision": 0.4064516129032258,
+      "recall": 0.875,
+      "f1": 0.5550660792951542,
+      "support": 72
+    }
+  },
+  "confusion_matrix": [
+    [
+      36,
+      0,
+      36
+    ],
+    [
+      0,
+      16,
+      56
+    ],
+    [
+      0,
+      9,
+      63
+    ]
+  ],
+  "class_names": [
+    "extrusion_error",
+    "layer_shift",
+    "no_error"
+  ],
+  "n": 216,
+  "split": "test",
+  "weights": "weights/smoke/model_a_classify.onnx"
+}
