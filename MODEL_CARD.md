@@ -8,7 +8,7 @@
 | Architecture | Ultralytics YOLO (nano) | Ultralytics YOLO-cls (nano) | causal TCN (4 levels, 64 ch) or small Transformer (~76 k params) |
 | Input | RGB frame (640 px full, 256 px smoke) | RGB frame (224 px full, 128 px smoke) | window of 32 per-frame feature vectors |
 | Training data | YOLO-Strings | Trier FFF (Bast et al. 2026) | YOLO-Strings sequences + Trier sequences with synthetic layer shift |
-| Runtime | ONNX Runtime / PyTorch | ONNX Runtime / PyTorch | PyTorch (ONNX export planned) |
+| Runtime | ONNX Runtime / PyTorch | ONNX Runtime / PyTorch | PyTorch (ONNX export available; server uses PyTorch) |
 | Author | Bilel Dhahri | | |
 | License | MIT (code); datasets CC-BY-4.0 | | |
 

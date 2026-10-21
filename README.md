@@ -52,8 +52,9 @@ alerts → dashboard → *operator-approved* pause on OctoPrint or Moonraker (Kl
   sequence, **detection delay**, and **false alarms per 100 frames / per print-hour**, using the same
   k-of-n alarm rule for both models.
 - **Torch-free deployment path.** ONNX export of the Model A detector, classifier and feature embedder;
-  the Docker image runs Model A on ONNX Runtime + OpenCV with no PyTorch. Model B checkpoints are
-  PyTorch today (ONNX export of the TCN is on the roadmap).
+  the Docker image runs Model A on ONNX Runtime + OpenCV with no PyTorch. Model B can be exported too
+  (`python -m printguard.export temporal`), but the live server still loads the PyTorch checkpoint;
+  wiring the ONNX TCN into the server is on the roadmap.
 - **Live system.** FastAPI REST + WebSocket, SQLite event timeline, single-page dashboard with live
   boxes, per-class confidence and trend, alert queue, pause audit log.
 - **Safety first.** Pause is disabled by default, dry-run by default, requires an explicit operator
@@ -273,7 +274,7 @@ Highlights – full list in [ROADMAP.md](ROADMAP.md):
 - [ ] Full GPU training of Model A and Model B (Colab notebooks) and updated results table
 - [ ] Scene-matched negatives to remove the stringing shortcut
 - [ ] Error-analysis gallery (false positives / negatives)
-- [ ] Raspberry Pi 5 FPS measurement and ONNX export of Model B
+- [ ] Raspberry Pi 5 FPS measurement and ONNX Model B in the live server
 - [ ] Own recordings on a real printer + camera, including spaghetti / warping
 
 ## Documentation

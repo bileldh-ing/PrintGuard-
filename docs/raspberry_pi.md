@@ -31,7 +31,7 @@ Open `http://<pi-hostname>:8000`. For a USB camera, uncomment the `devices:` blo
 `docker-compose.yml` (`/dev/video0`) and start a `usb` source with URI `0` from the dashboard.
 
 The Docker config (`configs/server.docker.yaml`) runs **Model A only** on ONNX Runtime, because Model B
-checkpoints are PyTorch today. To run Model B on the Pi, use option B with PyTorch installed.
+is loaded from a PyTorch checkpoint by the server today. To run Model B on the Pi, use option B with PyTorch installed.
 
 ## Option B — native Python
 
