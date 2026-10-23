@@ -41,6 +41,6 @@ jobs:
       - name: Install CPU-only PyTorch
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install runtime + test dependencies
-        run: pip install -r requirements.txt "pytest>=8" "httpx>=0.27"
+        run: pip install -r requirements.txt "onnx>=1.15" "pytest>=8" "httpx>=0.27"
       - name: Run tests
         run: python -m pytest -q

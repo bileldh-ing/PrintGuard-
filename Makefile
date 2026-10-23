@@ -10,7 +10,7 @@ RDIR        := $(if $(filter smoke,$(strip $(PROFILE))),results/smoke,results)
 DET_IMGSZ   := $(if $(filter smoke,$(strip $(PROFILE))),256,640)
 CLS_IMGSZ   := $(if $(filter smoke,$(strip $(PROFILE))),128,224)
 
-.PHONY: help install install-train data train-a train-b export eval benchmark serve demo test lint format docker clean
+.PHONY: help install install-train data train-a train-b export export-b eval benchmark serve demo test lint format docker clean
 
 help:            ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -35,6 +35,10 @@ export:          ## ONNX export of Model A + feature embedder
 	$(PY) -m printguard.export yolo --weights $(WDIR)/model_a_classify.pt --imgsz $(CLS_IMGSZ)
 	$(PY) -m printguard.export embedder --out $(WDIR)/embedder.onnx
 
+export-b:        ## ONNX export of Model B (TCN + Transformer) for torch-free serving
+	$(PY) -m printguard.export temporal --weights $(WDIR)/model_b_tcn.pt --window 32
+	$(PY) -m printguard.export temporal --weights $(WDIR)/model_b_transformer.pt --window 32
+
 train-b: export  ## Model B: features (resumable) + TCN + Transformer
 	$(PY) -m printguard.training.train_b features --config configs/model_b_tcn.yaml $(SMOKE_B)
 	$(PY) -m printguard.training.train_b train --config configs/model_b_tcn.yaml $(SMOKE_B)
@@ -45,12 +49,13 @@ eval:            ## test-split metrics for A and B + FPS benchmark
 	$(PY) -m printguard.evaluation.eval_a detector --weights $(WDIR)/model_a_detect.pt --imgsz $(DET_IMGSZ) --out $(RDIR)/model_a
 	$(PY) -m printguard.training.train_b evaluate --config configs/model_b_tcn.yaml $(SMOKE_B)
 	$(PY) -m printguard.training.train_b evaluate --config configs/model_b_transformer.yaml $(SMOKE_B)
+	$(MAKE) export-b PROFILE=$(strip $(PROFILE))
 	$(MAKE) benchmark PROFILE=$(strip $(PROFILE))
 
 benchmark:       ## CPU latency / FPS of every pipeline stage
 	$(PY) -m printguard.evaluation.benchmark --detector $(WDIR)/model_a_detect.onnx --det-imgsz $(DET_IMGSZ) \
 	  --classifier $(WDIR)/model_a_classify.onnx --embedder $(WDIR)/embedder.onnx \
-	  --temporal $(WDIR)/model_b_tcn.pt --out $(RDIR)/benchmark_cpu.json
+	  --temporal $(WDIR)/model_b_tcn.onnx --out $(RDIR)/benchmark_cpu.json
 
 demo:            ## build a replay video from a held-out test sequence (data/demo/*.mp4)
 	$(PY) scripts/make_demo_video.py

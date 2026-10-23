@@ -57,12 +57,22 @@ class OnlinePipeline:
         self.policy = policy or AlertPolicy()
         self.window, self.trend_len = window, trend_len
         self.temporal = self.norm = self.extractor = None
+        self.temporal_backend: str | None = None
         if temporal_ckpt and Path(temporal_ckpt).exists():
             from printguard.models.features import FrameFeatureExtractor, make_embedder
-            from printguard.training.train_b import load_temporal
 
-            self.temporal, self.norm, ck = load_temporal(temporal_ckpt)
-            f = dict(ck["features"])
+            if str(temporal_ckpt).endswith(".onnx"):  # torch-free path (Docker / Raspberry Pi)
+                from printguard.inference.onnx_backend import OnnxTemporal
+
+                self.temporal = OnnxTemporal(temporal_ckpt)
+                f = dict(self.temporal.features)
+                self.temporal_backend = "onnx"
+            else:
+                from printguard.training.train_b import load_temporal
+
+                self.temporal, self.norm, ck = load_temporal(temporal_ckpt)
+                f = dict(ck["features"])
+                self.temporal_backend = "torch"
             if embedder:  # deployment may point at a different copy of the same embedder
                 f["embedder"] = embedder
             emb = make_embedder(
@@ -97,6 +107,17 @@ class OnlinePipeline:
                 scores[label] = max(scores.get(label, 0.0), p)
         return scores
 
+    def temporal_scores(self, feats: np.ndarray) -> dict[str, float]:
+        """Model-B scores of the newest frame given the ``(time, dim)`` feature buffer."""
+        if self.temporal_backend == "onnx":
+            return self.temporal(feats)
+        import torch
+
+        x = torch.from_numpy(self.norm(feats))[None]
+        with torch.inference_mode():
+            probs = torch.sigmoid(self.temporal(x))[0, -1].numpy()
+        return {c: float(p) for c, p in zip(TEMPORAL_CLASSES, probs, strict=True)}
+
     def __call__(self, frame_bgr: np.ndarray, timestamp: float | None = None) -> FrameEvent:
         t0 = time.perf_counter()
         h, w = frame_bgr.shape[:2]
@@ -104,14 +125,9 @@ class OnlinePipeline:
         result = self.analyzer(frame_bgr) if self.analyzer else None
         if result is not None:
             ev.detections, ev.class_probs = result.detections, result.class_probs
-        if self.temporal is not None and self.extractor is not None and self.norm is not None:
-            import torch
-
+        if self.temporal is not None and self.extractor is not None:
             self._feats.append(self.extractor([frame_bgr], [result])[0])
-            x = torch.from_numpy(self.norm(np.stack(self._feats)))[None]
-            with torch.inference_mode():
-                probs = torch.sigmoid(self.temporal(x))[0, -1].numpy()
-            ev.temporal_scores = {c: float(p) for c, p in zip(TEMPORAL_CLASSES, probs, strict=True)}
+            ev.temporal_scores = self.temporal_scores(np.stack(self._feats))
         scores = self.frame_scores(ev)
         for label, s in scores.items():
             hist = self._scores.setdefault(label, deque(maxlen=self.trend_len))

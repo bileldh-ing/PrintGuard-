@@ -151,6 +151,7 @@ class InferenceWorker:
                 "detector": bool(p and p.analyzer and p.analyzer.detector),
                 "classifier": bool(p and p.analyzer and p.analyzer.classifier),
                 "temporal": bool(p and p.temporal is not None),
+                "temporal_backend": getattr(p, "temporal_backend", None),
             },
             "clients": self.broadcaster.n_clients,
             "last_error": self.last_error,

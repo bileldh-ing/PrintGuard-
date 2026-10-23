@@ -5,6 +5,6 @@ pipeline:
     detector: {weights: weights/model_a_detect.onnx, conf: 0.25}
     classifier: {weights: weights/model_a_classify.onnx}
   model_b:
-    # Model B checkpoints are PyTorch; set weights to "" on torch-free devices to use Model A only.
-    weights: ""
+    # Torch-free Model B (`make export-b`); a missing file falls back to Model A only.
+    weights: weights/model_b_tcn.onnx
     embedder: weights/embedder.onnx

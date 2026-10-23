@@ -63,7 +63,18 @@ def export_embedder(out: str | Path, embed_dim: int = 128, imgsz: int = 160, pre
 
 
 def export_temporal(weights: str | Path, window: int = 32, out: str | Path | None = None) -> Path:
-    """Export a Model-B checkpoint with a fixed window length."""
+    """Export a Model-B checkpoint to a self-contained ONNX file.
+
+    The graph has a fixed ``(1, window, in_dim)`` input (static shapes trace cleanly for both the
+    TCN and ``nn.MultiheadAttention`` and run faster on small CPUs). Both architectures are
+    causal, so :class:`~printguard.inference.onnx_backend.OnnxTemporal` right-pads a ring buffer
+    that is still filling up and reads the output at the last real frame, which gives exactly
+    the PyTorch scores. Everything the torch-free runtime needs is stored in the ONNX metadata:
+    class names, feature normaliser, feature-extractor settings, model type and window length.
+    """
+    import json
+
+    import onnx
     import torch
 
     from printguard.training.train_b import load_temporal
@@ -72,8 +83,29 @@ def export_temporal(weights: str | Path, window: int = 32, out: str | Path | Non
     out = Path(out or Path(weights).with_suffix(".onnx"))
     dummy = torch.zeros(1, window, ck["in_dim"])
     torch.onnx.export(
-        model, dummy, str(out), input_names=["features"], output_names=["logits"], opset_version=17, dynamo=False
+        model,
+        dummy,
+        str(out),
+        input_names=["features"],
+        output_names=["logits"],
+        opset_version=17,
+        dynamo=False,
     )
+    proto = onnx.load(str(out))
+    meta = {
+        "printguard_model": "temporal",
+        "model_type": str(ck["model_cfg"].get("type", "tcn")),
+        "classes": json.dumps(list(ck["classes"])),
+        "normalizer": json.dumps({k: list(map(float, v)) for k, v in ck["normalizer"].items()}),
+        "features": json.dumps(ck.get("features", {})),
+        "in_dim": str(ck["in_dim"]),
+        "window": str(window),
+    }
+    del proto.metadata_props[:]
+    for k, v in meta.items():
+        proto.metadata_props.add(key=k, value=v)
+    onnx.save(proto, str(out))
+    LOGGER.info("temporal model (%s, window %d) -> %s", meta["model_type"], window, out)
     return out
 
 

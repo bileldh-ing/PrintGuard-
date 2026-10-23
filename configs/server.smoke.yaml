@@ -5,5 +5,5 @@ pipeline:
     detector: {weights: weights/smoke/model_a_detect.onnx, conf: 0.4}
     classifier: {weights: weights/smoke/model_a_classify.onnx}
   model_b:
-    weights: weights/smoke/model_b_tcn.pt
+    weights: weights/smoke/model_b_tcn.onnx   # `make export-b PROFILE=smoke`; .pt works too
     embedder: weights/smoke/embedder.onnx

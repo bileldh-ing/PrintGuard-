@@ -149,3 +149,48 @@ class OnnxEmbedder:
             rgb = cv2.cvtColor(cv2.resize(f, (self.imgsz, self.imgsz), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB)
             batch.append(((rgb.astype(np.float32) / 255.0 - IMAGENET_MEAN) / IMAGENET_STD).transpose(2, 0, 1))
         return self.sess.run(None, {self.sess.get_inputs()[0].name: np.stack(batch)})[0].astype(np.float32)
+
+
+class OnnxTemporal:
+    """Model B (TCN / Transformer) exported by ``python -m printguard.export temporal``.
+
+    The ONNX file is self-contained: class names, feature normaliser and feature-extractor
+    settings live in its metadata. The graph has a fixed window; because Model B is causal, a
+    shorter buffer is right-padded and read at its last real frame (identical to running the
+    PyTorch checkpoint on the short buffer), and a longer one keeps its newest ``window`` frames.
+    """
+
+    def __init__(self, path: str | Path, threads: int | None = None) -> None:
+        import json
+
+        self.sess = _session(path, threads)
+        meta = self.sess.get_modelmeta().custom_metadata_map
+        if meta.get("printguard_model") != "temporal":
+            raise ValueError(f"{path} is not a PrintGuard temporal export (re-run `printguard.export temporal`)")
+        self.classes: list[str] = json.loads(meta["classes"])
+        norm = json.loads(meta["normalizer"])
+        self.mean = np.asarray(norm["mean"], dtype=np.float32)
+        self.std = np.maximum(np.asarray(norm["std"], dtype=np.float32), 1e-6)
+        self.features: dict = json.loads(meta.get("features", "{}"))
+        self.model_type = meta.get("model_type", "tcn")
+        self.in_dim = int(meta["in_dim"])
+        self.window = int(meta.get("window", 32))
+        self._input = self.sess.get_inputs()[0].name
+
+    def logits(self, feats: np.ndarray) -> np.ndarray:
+        """Per-step logits ``(t, classes)`` for a ``(t, in_dim)`` buffer of *unnormalised* features.
+
+        ``t`` is ``min(len(feats), window)``: longer buffers keep their newest ``window`` frames.
+        """
+        if feats.ndim != 2 or feats.shape[1] != self.in_dim or len(feats) == 0:
+            raise ValueError(f"expected (time, {self.in_dim}) features, got {feats.shape}")
+        x = ((feats[-self.window :] - self.mean) / self.std).astype(np.float32)
+        t = len(x)
+        if t < self.window:  # causal model: padding after the last real frame cannot change it
+            x = np.concatenate([x, np.zeros((self.window - t, self.in_dim), dtype=np.float32)])
+        return self.sess.run(None, {self._input: x[None]})[0][0, :t]
+
+    def __call__(self, feats: np.ndarray) -> dict[str, float]:
+        """Sigmoid scores of the last time step (what the online pipeline alerts on)."""
+        z = self.logits(feats)[-1].astype(np.float64)
+        return {c: float(1.0 / (1.0 + np.exp(-v))) for c, v in zip(self.classes, z, strict=True)}
