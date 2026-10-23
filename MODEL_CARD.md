@@ -8,7 +8,7 @@
 | Architecture | Ultralytics YOLO (nano) | Ultralytics YOLO-cls (nano) | causal TCN (4 levels, 64 ch) or small Transformer (~76 k params) |
 | Input | RGB frame (640 px full, 256 px smoke) | RGB frame (224 px full, 128 px smoke) | window of 32 per-frame feature vectors |
 | Training data | YOLO-Strings | Trier FFF (Bast et al. 2026) | YOLO-Strings sequences + Trier sequences with synthetic layer shift |
-| Runtime | ONNX Runtime / PyTorch | ONNX Runtime / PyTorch | PyTorch (ONNX export available; server uses PyTorch) |
+| Runtime | ONNX Runtime / PyTorch | ONNX Runtime / PyTorch | ONNX Runtime / PyTorch (server picks by file extension) |
 | Author | Bilel Dhahri | | |
 | License | MIT (code); datasets CC-BY-4.0 | | |
 
@@ -45,6 +45,7 @@ false alarms per 100 clean frames, with a shared 3-of-5 alarm rule for both mode
 | TCN vs A, stringing | test sequences | frame AP 0.965 vs 0.385 (likely inflated, see caveats) |
 | TCN vs A, synthetic layer shift | test sequences | frame AP 0.485 vs 0.334 · detected 4/8 vs 4/8 · false alarms 1.08 vs 1.88 per 100 frames |
 | Full pipeline | 2-core CPU, ONNX Model A + embedder, PyTorch TCN | ~13.8 FPS |
+| Model B step | 2-core CPU, window 32, ONNX Runtime vs PyTorch | TCN 0.43 vs 5.16 ms · Transformer 0.39 vs 5.61 ms |
 
 These are from minutes of CPU training on small subsets and only show that the pipeline and the
 evaluation work end to end. They must not be quoted as model performance.

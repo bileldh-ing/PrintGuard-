@@ -37,6 +37,7 @@ has been run there at **smoke scale**. Full-scale training runs from the Colab G
 - [~] 20. Demo GIF and architecture diagram done; write-up / blog post and demo video with narration pending
 
 ## Next (after the core roadmap)
+- [x] Model B on ONNX Runtime in the server (self-contained export, PyTorch parity tests, torch-free Docker A + B) — Oct 23 2026
 - [ ] Full GPU training of Model A and Model B, update README results
 - [ ] Scene-matched negatives for stringing sequences (remove the scene shortcut in Model B's stringing AP)
 - [ ] Measure FPS on Raspberry Pi 5 / Jetson

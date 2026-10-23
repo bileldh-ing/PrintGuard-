@@ -51,15 +51,18 @@ alerts → dashboard → *operator-approved* pause on OctoPrint or Moonraker (Kl
 - **Sequence-level evaluation.** Frame AP / P / R *plus* what matters on a printer: detection rate per
   sequence, **detection delay**, and **false alarms per 100 frames / per print-hour**, using the same
   k-of-n alarm rule for both models.
-- **Torch-free deployment path.** ONNX export of the Model A detector, classifier and feature embedder;
-  the Docker image runs Model A on ONNX Runtime + OpenCV with no PyTorch. Model B can be exported too
-  (`python -m printguard.export temporal`), but the live server still loads the PyTorch checkpoint;
-  wiring the ONNX TCN into the server is on the roadmap.
+- **Torch-free deployment path.** Every model (YOLO detector, YOLO classifier, feature embedder and the
+  Model B TCN / Transformer) exports to ONNX, and the Docker image runs the full A + B pipeline on
+  ONNX Runtime + OpenCV with no PyTorch. The Model B export is self-contained (classes, feature
+  normaliser and extractor settings in the ONNX metadata) and is tested to match the PyTorch logits
+  for every ring-buffer length (max |Δlogit| ≈ 1e-6). On the 2-core dev CPU one Model B step over a
+  32-frame window takes ~0.4 ms in ONNX Runtime vs ~5 ms in PyTorch (smoke-scale weights; latency
+  depends on architecture, not training).
 - **Live system.** FastAPI REST + WebSocket, SQLite event timeline, single-page dashboard with live
   boxes, per-class confidence and trend, alert queue, pause audit log.
 - **Safety first.** Pause is disabled by default, dry-run by default, requires an explicit operator
   approval of a specific alert, is rate-limited and audited. There is no automatic pause code path.
-- **Engineering hygiene.** 52 unit/API tests, ruff lint + format, GitHub Actions CI on CPU, Makefile,
+- **Engineering hygiene.** 56 unit/API tests, ruff lint + format, GitHub Actions CI on CPU, Makefile,
   Dockerfile + compose, typed configs with smoke / full profiles.
 
 ## Architecture
@@ -73,7 +76,7 @@ flowchart LR
       ING[ingest.py<br/>OpenCV, rate limiting]
     end
 
-    subgraph Inference["Inference worker (ONNX Runtime + PyTorch TCN)"]
+    subgraph Inference["Inference worker (ONNX Runtime; PyTorch optional)"]
       ING --> DET[Model A: YOLO detector<br/>stringing boxes]
       ING --> CLS[Model A: YOLO classifier<br/>extrusion / layer shift]
       ING --> EMB[Frozen MobileNetV3-S<br/>embedding]
@@ -110,7 +113,7 @@ make install
 # or the full training stack (CPU PyTorch wheel)
 make install-train
 
-make test                 # 52 tests, CPU only, ~1 min
+make test                 # 56 tests, CPU only, ~1 min
 make data                 # PROFILE=smoke: ~hundreds of MB from Zenodo, checksummed
 make train-a              # Model A smoke run (CPU, minutes)  – use DEVICE=0 on a GPU
 make train-b              # ONNX export + feature cache + TCN + Transformer
@@ -137,6 +140,7 @@ docker compose up --build   # weights are mounted from ./weights, never baked in
 | `make train-a` | Model A: YOLO detector (YOLO-Strings) + frame classifier (Trier) |
 | `make export` | ONNX export of Model A + feature embedder |
 | `make train-b` | Model B: feature cache (resumable) + TCN + Transformer |
+| `make export-b` | ONNX export of Model B (TCN + Transformer) for torch-free serving |
 | `make eval` | test-split metrics for A and B + FPS benchmark |
 | `make benchmark` | per-stage CPU latency / FPS |
 | `make demo` | build a replay video from a held-out test sequence |

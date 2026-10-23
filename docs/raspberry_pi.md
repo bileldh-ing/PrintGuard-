@@ -23,15 +23,15 @@ sudo usermod -aG docker $USER && newgrp docker
 git clone https://github.com/bileldh-ing/PrintGuard-.git printguard && cd printguard
 mkdir -p weights data
 # copy the ONNX exports produced by `make export` (or the Colab notebooks) into ./weights:
-#   model_a_detect.onnx  model_a_classify.onnx  embedder.onnx
+#   model_a_detect.onnx  model_a_classify.onnx  embedder.onnx  model_b_tcn.onnx (`make export-b`)
 docker compose up -d --build
 ```
 
 Open `http://<pi-hostname>:8000`. For a USB camera, uncomment the `devices:` block in
 `docker-compose.yml` (`/dev/video0`) and start a `usb` source with URI `0` from the dashboard.
 
-The Docker config (`configs/server.docker.yaml`) runs **Model A only** on ONNX Runtime, because Model B
-is loaded from a PyTorch checkpoint by the server today. To run Model B on the Pi, use option B with PyTorch installed.
+The Docker config (`configs/server.docker.yaml`) runs **Model A and Model B** on ONNX Runtime with no
+PyTorch. If `weights/model_b_tcn.onnx` is missing, the server falls back to Model A only.
 
 ## Option B — native Python
 
@@ -39,8 +39,7 @@ is loaded from a PyTorch checkpoint by the server today. To run Model B on the P
 sudo apt install -y python3-venv libgl1 libglib2.0-0
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt                 # torch-free runtime
-# optional, for Model B on the Pi (aarch64 wheels exist on PyPI):
-# pip install torch --index-url https://download.pytorch.org/whl/cpu
+# PyTorch is not needed: Model B runs from model_b_tcn.onnx
 python -m server --config configs/server.docker.yaml
 ```
 
@@ -91,7 +90,8 @@ Set `PRINTGUARD_TOKEN` whenever the dashboard is reachable from your network.
 
 ```bash
 python -m printguard.evaluation.benchmark --detector weights/model_a_detect.onnx \
-  --classifier weights/model_a_classify.onnx --embedder weights/embedder.onnx --out results/pi_benchmark.json
+  --classifier weights/model_a_classify.onnx --embedder weights/embedder.onnx \
+  --temporal weights/model_b_tcn.onnx --out results/pi_benchmark.json
 ```
 
 Please open a PR with the JSON if you measure on a Pi.

@@ -55,6 +55,11 @@ comparison is not confounded by scene identity.
 
 Features are standardised with statistics fitted on the training split only (`FeatureNormalizer`).
 Model B is **causal** (a prediction at time *t* only uses frames ≤ *t*), so it can run online.
+Causality also makes the ONNX export simple: the graph has a fixed 32-frame input, and while the
+ring buffer is still filling up the runtime right-pads it and reads the output at the last real
+frame, which is exactly what PyTorch returns on the short buffer (checked in
+`tests/test_onnx_temporal.py`). The server chooses the backend from the weights file extension
+(`.onnx` → ONNX Runtime, `.pt` → PyTorch) and reports it as `models.temporal_backend` in `/api/status`.
 
 ## Online system
 
